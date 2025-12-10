@@ -55,11 +55,14 @@ echo "==============================================="
 ==============================================================================================================================================================================
 
 cd /opt
-sudo wget <TOMCAT>
-sudo tar -xzf <TOMCAT>
-sudo mv <folder> tomcat10
+sudo rm -rf tomcat10 apache-tomcat-10.1.50*
+sudo wget https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.50/bin/apache-tomcat-10.1.50.tar.gz
+sudo tar -xzf apache-tomcat-10.1.50.tar.gz
+sudo mv apache-tomcat-10.1.50 tomcat10
 sudo chmod +x /opt/tomcat10/bin/*.sh
 sudo /opt/tomcat10/bin/startup.sh
+
+
 
 #!/bin/bash
 set -e
