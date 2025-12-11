@@ -3,7 +3,7 @@ name: Build & Deploy Economic Times App
 on: push
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
