@@ -1,0 +1,107 @@
+name: CI-CD Pipeline to EC2 with Tomcat
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # -------------------------
+    # CHECKOUT CODE
+    # -------------------------
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # -------------------------
+    # SETUP JAVA & MAVEN
+    # -------------------------
+    - name: Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: "17"
+
+    - name: Setup Maven
+      uses: stCarolas/setup-maven@v4.5
+
+    # -------------------------
+    # BUILD CODE
+    # -------------------------
+    - name: Build Maven Project
+      run: mvn clean package -DskipTests=false
+
+    # -------------------------
+    # COPY WAR & DEPLOY TO EC2
+    # -------------------------
+    - name: Deploy WAR to EC2 and Restart Tomcat
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          echo "==============================================="
+          echo " Installing Java 17 & Maven on EC2"
+          echo "==============================================="
+
+          # -------------------------
+          # PREREQUISITES SCRIPT
+          # -------------------------
+          if ! command -v java >/dev/null 2>&1; then
+            sudo apt update -y
+            sudo apt install -y openjdk-17-jdk
+          fi
+
+          if ! command -v mvn >/dev/null 2>&1; then
+            sudo apt update -y
+            sudo apt install -y maven
+          fi
+
+          echo "==============================================="
+          echo " Installing Tomcat 10 if not exists"
+          echo "==============================================="
+
+          if [ ! -d "/opt/tomcat10" ]; then
+            cd /opt
+            sudo rm -rf apache-tomcat-10.1.50*
+            sudo wget https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.50/bin/apache-tomcat-10.1.50.tar.gz
+            sudo tar -xzf apache-tomcat-10.1.50.tar.gz
+            sudo mv apache-tomcat-10.1.50 tomcat10
+            sudo chmod +x /opt/tomcat10/bin/*.sh
+            sudo /opt/tomcat10/bin/startup.sh
+          fi
+
+          echo "==============================================="
+          echo " Copy WAR File to Tomcat"
+          echo "==============================================="
+
+    # -------------------------
+    # COPY WAR FILE TO EC2
+    # -------------------------
+    - name: Upload WAR to EC2
+      uses: appleboy/scp-action@v1.2.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "target/*.war"
+        target: "/opt/tomcat10/webapps/"
+
+    # -------------------------
+    # RESTART TOMCAT
+    # -------------------------
+    - name: Restart Tomcat
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo /opt/tomcat10/bin/shutdown.sh || true
+          sleep 5
+          sudo /opt/tomcat10/bin/startup.sh
+          echo "Deployment Completed!"
