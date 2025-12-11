@@ -1,6 +1,8 @@
 name: Build & Deploy Economic Times App
 
 on: push
+ branches:
+      - main
 jobs:
   build:
     runs-on: self-hosted
