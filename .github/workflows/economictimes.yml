@@ -34,5 +34,5 @@ jobs:
           sudo cp target/*.war /opt/apache-tomcat-10.1.49-src/webapps/
 
           echo "Restarting Tomcat..."
-          sudo /opt/apache-tomcat-11.0.15/bin/shutdown.sh || true
-          sudo /opt/apache-tomcat-11.0.15/bin/startup.sh
+          sudo /opt/apache-tomcat-10.1.49-src/bin/shutdown.sh || true
+          sudo /opt/apache-tomcat-10.1.49-src/bin/startup.sh
