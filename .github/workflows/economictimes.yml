@@ -1,8 +1,10 @@
 name: Build & Deploy Economic Times App
 
-on: push
- branches:
+on:
+  push:
+    branches:
       - main
+
 jobs:
   build:
     runs-on: self-hosted
@@ -23,12 +25,14 @@ jobs:
           sudo apt-get install -y maven
           mvn -version
 
-      - name: Build with Maven
-        run: mvn clean package 
+      - name: Build and Deploy WAR
+        run: |
+          echo "Building the project..."
+          mvn clean package
 
-          # Copy WAR file to EC2
-          cp target/*.war /opt/apache-tomcat-11.0.15/webapps
+          echo "Copying WAR to Tomcat..."
+          sudo cp target/*.war /opt/apache-tomcat-11.0.15/webapps/
 
-          # Restart Tomcat
+          echo "Restarting Tomcat..."
           sudo /opt/apache-tomcat-11.0.15/bin/shutdown.sh || true
           sudo /opt/apache-tomcat-11.0.15/bin/startup.sh
